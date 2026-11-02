@@ -173,10 +173,12 @@ A CV run takes about a minute on a MacBook (it uses the Mac GPU through MPS auto
 import numpy as np
 from cnn_1d import load_model, predict
 
-model, checkpoint = load_model("outputs/cnn_1d/20261028_195759_split_all/best_model.pt")
+model, checkpoint = load_model("models/cnn_1d/best_model.pt")
 data = np.load("data/final_data.npz")
 predicted_labels, probabilities = predict(model, checkpoint, data["X_test"])
 ```
+
+`models/cnn_1d/` holds the final model (copied from run `20261028_195759_split_all`), with its `run_info.json` and `results.txt`. Your own runs save to `outputs/cnn_1d/` instead.
 
 `predict` expects the already-scaled features from the npz. For new raw flows, apply `np.log1p` and `data/scaler.joblib` first.
 

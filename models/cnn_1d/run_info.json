@@ -1,0 +1,52 @@
+{
+  "config": {
+    "data_path": "data/final_data.npz",
+    "output_dir": "outputs/cnn_1d",
+    "channels": [
+      "all"
+    ],
+    "epochs": 100,
+    "patience": 15,
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "dropout": 0.3,
+    "conv_channels": [
+      32,
+      64
+    ],
+    "kernel_size": 3,
+    "no_class_weights": true,
+    "evaluate_test": true,
+    "seed": 4266,
+    "cv_folds": 0,
+    "tor_threshold": null,
+    "scaler_path": "data/scaler.joblib"
+  },
+  "resolved_channels": [
+    "bytes_out",
+    "bytes_in",
+    "packets_out",
+    "packets_in",
+    "gap_mean",
+    "gap_std",
+    "size_mean",
+    "size_std"
+  ],
+  "device": "mps",
+  "metrics": {
+    "best_epoch": 58,
+    "val_macro_f1": 0.7601158491110399,
+    "val_macro_f1_by_packets": {
+      "1-2": 0.6527316912279693,
+      "3-10": 0.8763597063736016,
+      "11+": 0.929021141390688
+    },
+    "test_macro_f1": 0.7448373772157936,
+    "test_macro_f1_by_packets": {
+      "1-2": 0.6152289384305013,
+      "3-10": 0.7250154212387381,
+      "11+": 0.8311466786382251
+    }
+  }
+}
