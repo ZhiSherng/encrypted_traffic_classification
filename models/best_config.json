@@ -1,0 +1,15 @@
+{
+  "hidden": 64,
+  "layers": 1,
+  "bidirectional": true,
+  "dropout": 0.3,
+  "pooling": "max",
+  "zero_empty": false,
+  "add_mask": false,
+  "lr": 0.003156261495234872,
+  "weight_decay": 1e-05,
+  "batch_size": 256,
+  "class_weight_power": 0.5,
+  "use_aug": true,
+  "epochs": 26
+}
