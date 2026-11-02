@@ -2,7 +2,7 @@
 
 This part of the project trains a 1D CNN to classify flows as **non_vpn**, **vpn** or **tor** using only the bucketed flow features (packet sizes, counts, direction and timing). Everything is in `cnn_1d.py`.
 
-Final result: **test macro-F1 of 0.745**, and **0.731 ± 0.018** in cross-validation (5-fold, repeated with 5 seeds). Most of the remaining errors come from flows that only have 1–2 packets, which is explained further down.
+Final result: **test macro-F1 of 0.742 ± 0.007** (retrained on train + val, 5 seeds), and **0.731 ± 0.018** in cross-validation (5-fold, repeated with 5 seeds). Most of the remaining errors come from flows that only have 1–2 packets, which is explained further down.
 
 ## Data
 
@@ -111,28 +111,34 @@ The result is stable across seeds, and weight decay 1e-3 is not actually better 
 
 ## Final model
 
-Settings: all channels, no class weights, everything else default, seed 4266.
+Settings: all channels, no class weights, everything else default.
+
+To match how the LSTM's final model was evaluated, the final CNN is **retrained on train + val** (12,428 flows, incl. the augmented Tor flows) and tested with **5 seeds** (4266, 1, 2, 3, 4). There is no held-out set left for early stopping, so it trains for a fixed **36 epochs**: the median best epoch over the 30 CV folds of this configuration (the fold-averaged val curve is flat from about epoch 30 to 60).
 
 ```bash
-python cnn_1d.py --no-class-weights --evaluate-test
+python cnn_1d.py --no-class-weights --train-on-train-val --epochs 36 --seed 4266   # repeat for seeds 1-4
 ```
 
-**Test set:**
+**Test set (mean ± std over 5 seeds):**
 
-| | precision | recall | F1 |
-|---|---|---|---|
-| non_vpn | 0.914 | 0.966 | 0.939 |
-| vpn | 0.919 | 0.835 | 0.875 |
-| tor | 0.625 | 0.316 | 0.420 |
-| **macro-F1** | | | **0.745** |
+| | F1 |
+|---|---|
+| non_vpn | 0.935 ± 0.005 |
+| vpn | 0.865 ± 0.017 |
+| tor | 0.426 ± 0.010 |
+| **macro-F1** | **0.742 ± 0.007** |
+
+Per seed the macro-F1 was 0.742, 0.742, 0.740, 0.733 and 0.754. The model finds 25–27 of the 79 test Tor flows and makes 12–22 false Tor predictions; almost all missed Tor flows are predicted as non_vpn.
 
 | Packets in window | Share of test flows | Macro-F1 | Tor F1 |
 |---|---|---|---|
-| 1–2 | 63% | 0.615 | 0.000 |
-| 3–10 | 18% | 0.725 | 0.593 |
-| 11+ | 19% | 0.831 | 0.791 |
+| 1–2 | 63% | 0.624 | 0.040 |
+| 3–10 | 18% | 0.724 | 0.581 |
+| 11+ | 19% | 0.810 | 0.768 |
 
-The test score (0.745) is in line with the CV estimate (0.731 ± 0.018), so the tuning doesn't seem to have overfitted. Validation was a bit higher (0.760), which is expected since validation was used to choose the best epoch.
+The test score is in line with the CV estimate (0.731 ± 0.018), so the tuning doesn't seem to have overfitted. No setting was chosen using the test set.
+
+Before the retraining, the model trained on train only (early stopping on val, seed 4266, `--evaluate-test`) scored 0.745 on test, which is inside the 5-seed range, and 0.760 on val (the LR baseline gets 0.690 on the same val set).
 
 ## What limits the model
 
@@ -154,7 +160,8 @@ pip install -r requirements.txt
 python cnn_1d.py                                  # normal run (train/val)
 python cnn_1d.py --cv-folds 5 --no-class-weights  # cross-validation
 python cnn_1d.py --channels size timing           # use only some channels
-python cnn_1d.py --no-class-weights --evaluate-test   # final run, only do this once
+python cnn_1d.py --no-class-weights --evaluate-test   # train only, early stop on val, score test
+python cnn_1d.py --no-class-weights --train-on-train-val --epochs 36 --seed 4266   # final protocol
 ```
 
 Run `python cnn_1d.py --help` to see all the options. Each run saves to its own folder in `outputs/cnn_1d/` (gitignored):
@@ -178,7 +185,7 @@ data = np.load("data/final_data.npz")
 predicted_labels, probabilities = predict(model, checkpoint, data["X_test"])
 ```
 
-`models/cnn_1d/` holds the final model (copied from run `20261028_195759_split_all`), with its `run_info.json` and `results.txt`. Your own runs save to `outputs/cnn_1d/` instead.
+`models/cnn_1d/` holds the final model (the seed-4266 train + val retrain, copied from run `20261102_181613_refit_seed4266_all`, test macro-F1 0.742), with its `run_info.json` and `results.txt`. Your own runs save to `outputs/cnn_1d/` instead.
 
 `predict` expects the already-scaled features from the npz. For new raw flows, apply `np.log1p` and `data/scaler.joblib` first.
 
