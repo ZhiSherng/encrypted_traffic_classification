@@ -5,7 +5,7 @@
     "channels": [
       "all"
     ],
-    "epochs": 100,
+    "epochs": 36,
     "patience": 15,
     "batch_size": 128,
     "learning_rate": 0.001,
@@ -17,9 +17,10 @@
     ],
     "kernel_size": 3,
     "no_class_weights": true,
-    "evaluate_test": true,
+    "evaluate_test": false,
     "seed": 4266,
     "cv_folds": 0,
+    "train_on_train_val": true,
     "tor_threshold": null,
     "scaler_path": "data/scaler.joblib"
   },
@@ -35,18 +36,15 @@
   ],
   "device": "mps",
   "metrics": {
-    "best_epoch": 58,
-    "val_macro_f1": 0.7601158491110399,
-    "val_macro_f1_by_packets": {
-      "1-2": 0.6527316912279693,
-      "3-10": 0.8763597063736016,
-      "11+": 0.929021141390688
-    },
-    "test_macro_f1": 0.7448373772157936,
+    "epochs": 36,
+    "test_macro_f1": 0.7421439301889552,
+    "test_f1_non_vpn": 0.9333750390991554,
+    "test_f1_vpn": 0.8610567514677103,
+    "test_f1_tor": 0.432,
     "test_macro_f1_by_packets": {
-      "1-2": 0.6152289384305013,
-      "3-10": 0.7250154212387381,
-      "11+": 0.8311466786382251
+      "1-2": 0.6357012653412515,
+      "3-10": 0.7071465721567142,
+      "11+": 0.8128351484166171
     }
   }
 }

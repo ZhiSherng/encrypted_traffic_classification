@@ -9,7 +9,8 @@ Usage:
     python cnn_1d.py --no-class-weights              # class-weighting experiment
     python cnn_1d.py --cv-folds 5                    # grouped CV + tor threshold tuning
     python cnn_1d.py --tor-threshold 0.6             # use a threshold picked from CV
-    python cnn_1d.py --evaluate-test                 # final run only
+    python cnn_1d.py --evaluate-test                 # score test (train only, early stop on val)
+    python cnn_1d.py --no-class-weights --train-on-train-val --epochs 36 --seed 4266   # final protocol
 
 Inference in a notebook:
     from cnn_1d import load_model, predict
@@ -84,6 +85,9 @@ def parse_arguments():
         --evaluate-test     also score the test set; use for the final run only
         --cv-folds          k > 0 runs k-fold cross-validation grouped by stream_id over
                             train+val instead of the fixed split; the test set is not used
+        --train-on-train-val  final protocol: retrain on train+val for a fixed --epochs
+                            (picked from the CV best epochs) with no early stopping, then
+                            score test. Matches how the LSTM's final model was trained
         --tor-threshold     predict tor whenever P(tor) >= this value, otherwise the
                             likelier of non_vpn / vpn; pick it from a --cv-folds run
         --scaler-path       scaler saved with the npz; used only to recover packet counts
@@ -114,6 +118,8 @@ def parse_arguments():
     parser.add_argument("--seed", type=int, default=4266)
     parser.add_argument("--cv-folds", type=int, default=0,
                         help="k-fold cross-validation grouped by stream over train+val (0 = fixed split)")
+    parser.add_argument("--train-on-train-val", action="store_true",
+                        help="retrain on train+val for exactly --epochs epochs (no early stopping), then score test")
     parser.add_argument("--tor-threshold", type=float, default=None,
                         help="predict tor when P(tor) >= this value (default: plain argmax)")
     parser.add_argument("--scaler-path", type=Path, default=Path("data/scaler.joblib"),
@@ -522,6 +528,53 @@ def run_fixed_split(arguments, splits, packet_counts, channels, model_config, de
     return summary_text, metrics
 
 
+def run_train_val_refit(arguments, splits, packet_counts, channels, model_config, device, run_dir):
+    """Final protocol: train on train + val for exactly --epochs epochs, then score test.
+
+    There is no held-out set left for early stopping, so the epoch count has to be picked
+    beforehand from the CV runs. The augmented flows only come from train streams, so
+    adding val doesn't create any leakage.
+    """
+    train_features, train_labels, _ = splits["train"]
+    val_features, val_labels, _ = splits["val"]
+    test_features, test_labels, _ = splits["test"]
+    refit_features = np.concatenate([train_features, val_features])
+    refit_labels = np.concatenate([train_labels, val_labels])
+
+    set_seed(arguments.seed)
+    train_loader = make_loader(refit_features, refit_labels, arguments.batch_size, True, arguments.seed)
+    model = FlowCNN(**model_config).to(device)
+    class_weights = None if arguments.no_class_weights else compute_class_weights(refit_labels).to(device)
+    loss_function = nn.CrossEntropyLoss(weight=class_weights)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=arguments.learning_rate,
+                                  weight_decay=arguments.weight_decay)
+
+    history_rows = []
+    for epoch in range(1, arguments.epochs + 1):
+        train_loss = train_one_epoch(model, train_loader, loss_function, optimizer, device)
+        history_rows.append({"epoch": epoch, "train_loss": train_loss})
+        print(f"epoch {epoch:3d} | train loss {train_loss:.4f}")
+    pd.DataFrame(history_rows).to_csv(run_dir / "history.csv", index=False)
+    save_checkpoint(model, model_config, channels, run_dir / "best_model.pt",
+                    {"best_epoch": arguments.epochs, "seed": arguments.seed,
+                     "tor_threshold": arguments.tor_threshold, "trained_on": "train+val"})
+
+    threshold_note = "argmax" if arguments.tor_threshold is None else f"tor threshold {arguments.tor_threshold}"
+    test_predicted = apply_tor_threshold(compute_probabilities(model, test_features), arguments.tor_threshold)
+    summary_text = (f"trained on train+val ({len(refit_labels)} flows) for {arguments.epochs} epochs "
+                    f"| decision rule: {threshold_note}\n\n"
+                    + describe_results("test", test_labels, test_predicted))
+    per_class_f1 = f1_score(test_labels, test_predicted, labels=range(len(CLASS_NAMES)),
+                            average=None, zero_division=0)
+    metrics = {"epochs": arguments.epochs, "test_macro_f1": macro_f1(test_labels, test_predicted),
+               **{f"test_f1_{name}": float(score) for name, score in zip(CLASS_NAMES, per_class_f1)}}
+    if packet_counts is not None:
+        size_table, size_text = describe_by_packet_count("test", test_labels, test_predicted, packet_counts["test"])
+        summary_text += "\n" + size_text
+        metrics["test_macro_f1_by_packets"] = dict(zip(size_table["packets"], size_table["macro_f1"]))
+    return summary_text, metrics
+
+
 def run_cross_validation(arguments, splits, augmented_mask, packet_counts, channels, model_config, device, run_dir):
     """k-fold CV over train + val, grouped by stream_id so a recording is never in two folds.
 
@@ -642,7 +695,12 @@ def main():
     splits, augmented_mask, packet_counts = load_split_data(arguments.data_path, channels, arguments.scaler_path)
     model_config = build_model_config(arguments, channels)
 
-    mode = f"cv{arguments.cv_folds}" if arguments.cv_folds else "split"
+    if arguments.cv_folds:
+        mode = f"cv{arguments.cv_folds}"
+    elif arguments.train_on_train_val:
+        mode = f"refit_seed{arguments.seed}"
+    else:
+        mode = "split"
     run_name = f"{time.strftime('%Y%m%d_%H%M%S')}_{mode}_{'-'.join(arguments.channels)}"
     run_dir = arguments.output_dir / run_name
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -662,6 +720,9 @@ def main():
             print("note: --evaluate-test is ignored in cross-validation mode")
         summary_text, metrics = run_cross_validation(arguments, splits, augmented_mask, packet_counts, channels,
                                                      model_config, device, run_dir)
+    elif arguments.train_on_train_val:
+        summary_text, metrics = run_train_val_refit(arguments, splits, packet_counts, channels,
+                                                    model_config, device, run_dir)
     else:
         summary_text, metrics = run_fixed_split(arguments, splits, packet_counts, channels,
                                                 model_config, device, run_dir)
