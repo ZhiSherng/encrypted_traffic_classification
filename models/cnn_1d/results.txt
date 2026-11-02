@@ -1,0 +1,47 @@
+best epoch: 58 | decision rule: argmax
+
+=== validation | macro-F1: 0.760 ===
+              precision    recall  f1-score   support
+
+     non_vpn      0.945     0.980     0.962      1196
+         vpn      0.946     0.918     0.932       342
+         tor      0.630     0.279     0.386        61
+
+    accuracy                          0.940      1599
+   macro avg      0.840     0.726     0.760      1599
+weighted avg      0.933     0.940     0.934      1599
+
+confusion matrix (rows = true, cols = predicted)
+              pred_non_vpn  pred_vpn  pred_tor
+true_non_vpn          1172        14        10
+true_vpn                28       314         0
+true_tor                40         4        17
+
+--- validation: by flow size (packets in window) ---
+packets  flows  share  tor_flows  macro_f1  f1_non_vpn  f1_vpn  f1_tor
+    1-2   1213  0.759         45     0.653       0.964   0.918   0.077
+   3-10    192  0.120          5     0.876       0.961   0.941   0.727
+    11+    194  0.121         11     0.929       0.949   0.958   0.880
+
+=== test | macro-F1: 0.745 ===
+              precision    recall  f1-score   support
+
+     non_vpn      0.914     0.966     0.939      1552
+         vpn      0.919     0.835     0.875       541
+         tor      0.625     0.316     0.420        79
+
+    accuracy                          0.910      2172
+   macro avg      0.819     0.706     0.745      2172
+weighted avg      0.905     0.910     0.904      2172
+
+confusion matrix (rows = true, cols = predicted)
+              pred_non_vpn  pred_vpn  pred_tor
+true_non_vpn          1499        39        14
+true_vpn                88       452         1
+true_tor                53         1        25
+
+--- test: by flow size (packets in window) ---
+packets  flows  share  tor_flows  macro_f1  f1_non_vpn  f1_vpn  f1_tor
+    1-2   1368  0.630         47     0.615       0.933   0.912   0.000
+   3-10    400  0.184         13     0.725       0.939   0.644   0.593
+    11+    404  0.186         19     0.831       0.955   0.747   0.791
