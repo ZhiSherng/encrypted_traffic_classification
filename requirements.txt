@@ -1,5 +1,24 @@
-numpy
-pandas
-joblib
-scikit-learn
-torch
+# Python 3.12. Versions match the environment cnn_1d.py was tested with.
+# Install: pip install -r requirements.txt
+#
+# Note: data/scaler.joblib was saved with scikit-learn 1.6.1. Loading it with 1.9.1
+# prints an InconsistentVersionWarning; it is harmless for a StandardScaler, but the
+# warning goes away if the scaler is re-saved with the version below.
+ 
+# data and modelling
+numpy==2.5.4
+pandas==3.0.6
+scikit-learn==1.9.1
+scipy==1.18.1
+joblib==1.6.0
+torch==2.14.1
+
+# plots
+matplotlib==3.11.2
+seaborn==0.13.2
+
+# pcap parsing (parsing.ipynb)
+scapy==2.8.0
+
+# notebooks
+ipykernel==7.4.0

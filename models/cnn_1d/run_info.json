@@ -1,0 +1,50 @@
+{
+  "config": {
+    "data_path": "data/final_data.npz",
+    "output_dir": "outputs/cnn_1d",
+    "channels": [
+      "all"
+    ],
+    "epochs": 36,
+    "patience": 15,
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "dropout": 0.3,
+    "conv_channels": [
+      32,
+      64
+    ],
+    "kernel_size": 3,
+    "no_class_weights": true,
+    "evaluate_test": false,
+    "seed": 4266,
+    "cv_folds": 0,
+    "train_on_train_val": true,
+    "tor_threshold": null,
+    "scaler_path": "data/scaler.joblib"
+  },
+  "resolved_channels": [
+    "bytes_out",
+    "bytes_in",
+    "packets_out",
+    "packets_in",
+    "gap_mean",
+    "gap_std",
+    "size_mean",
+    "size_std"
+  ],
+  "device": "mps",
+  "metrics": {
+    "epochs": 36,
+    "test_macro_f1": 0.7421439301889552,
+    "test_f1_non_vpn": 0.9333750390991554,
+    "test_f1_vpn": 0.8610567514677103,
+    "test_f1_tor": 0.432,
+    "test_macro_f1_by_packets": {
+      "1-2": 0.6357012653412515,
+      "3-10": 0.7071465721567142,
+      "11+": 0.8128351484166171
+    }
+  }
+}
