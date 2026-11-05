@@ -42,7 +42,7 @@ The scripts use the GPU automatically if CUDA is available, otherwise the CPU (t
 
 ## 2. Data
 
-The scripts read `data/final_data.npz` (relative to the **current directory**, so run them from the repo root). It is written by `eda_cleaning.ipynb` (the "save final_data.npz" cell), which saves to the working directory, so move or copy the file into `data/` if you regenerate it. It is already in `data/`.
+The scripts read `data/final_data.npz` (relative to the **current directory**, so run them from the repo root). It is written by `eda_cleaning.ipynb` (the "save final_data.npz" cell) straight into `data/`, and is already there.
 
 Each flow has 224 features: 8 channels × 28 log-spaced time buckets over the first 5 s, reshaped to `(28 time steps, 8 channels)` for the LSTM. Splits are grouped by `stream_id`, and only the train split has the augmented Tor flows. `N_BUCKETS`, `BLOCKS` and `SEEDS` in `train_lstm.py` are hard-coded and must match the notebook's `NUM_BUCKETS` and feature order.
 

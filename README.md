@@ -75,7 +75,7 @@ The repository should already contain `data/final_data.npz`, so you can go strai
 
 | Step | Command / file | Produces |
 |---|---|---|
-| 1. Rebuild the dataset (optional) | run `parsing.ipynb` (set your pcap paths), then the cleaning, split, augmentation, scaling and save cells of `eda_cleaning.ipynb`. The notebook saves `final_data.npz` and `scaler.joblib` to the working directory, so move them into `data/` | `data/final_data.npz`, `data/scaler.joblib` |
+| 1. Rebuild the dataset (optional) | run `parsing.ipynb` (set your pcap paths), then the cleaning, split, augmentation, scaling and save cells of `eda_cleaning.ipynb`. The notebook saves `final_data.npz` and `scaler.joblib` straight into `data/` | `data/final_data.npz`, `data/scaler.joblib` |
 | 2. Train the LSTM | `python train_lstm.py --sweep` | `models/lstm.pt`, `lstm_history.csv`, `lstm_seed_runs.csv` |
 | 3. Tune the LSTM (optional) | `python tune_lstm.py --trials 20`, then `python tune_lstm.py --final` | `models/tuning_results.csv`, `best_config.json`, `lstm_tuned.pt`, `tuned_test_scores.csv` |
 | 4. Train the 1D CNN | `python cnn_1d.py --no-class-weights --train-on-train-val --epochs 36 --seed 4266` (more options in `README_cnn.md`) | `outputs/cnn_1d/<run>/` |
