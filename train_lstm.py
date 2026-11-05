@@ -1,7 +1,7 @@
 """Train the LSTM once and save the results; eda_cleaning.ipynb only loads them.
 
-    python train_lstm.py            # train seed 4266 -> models/lstm.pt, models/lstm_history.csv
-    python train_lstm.py --sweep    # also train other seeds -> models/lstm_seed_runs.csv
+    python train_lstm.py            # train seed 4266 -> models/lstm/lstm.pt, models/lstm/lstm_history.csv
+    python train_lstm.py --sweep    # also train other seeds -> models/lstm/lstm_seed_runs.csv
 Importing this module only loads the data and defines helpers; it never trains - Have to run this .py file directly to train.
 """
 import argparse
@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import f1_score
 
 ROOT = Path(__file__).resolve().parent
-MODEL_DIR = ROOT / "models"
+MODEL_DIR = ROOT / "models" / "lstm"
 MODEL_PATH = MODEL_DIR / "lstm.pt"
 HISTORY_PATH = MODEL_DIR / "lstm_history.csv"
 SEED_RUNS_PATH = MODEL_DIR / "lstm_seed_runs.csv"
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     print(pd.DataFrame({"train": np.bincount(y_train), "val": np.bincount(y_validation),
                         "test": np.bincount(y_test)}, index=CLASSES))
 
-    MODEL_DIR.mkdir(exist_ok=True)
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
     model, history = train_lstm(seed=args.seed)
     torch.save(model.state_dict(), MODEL_PATH)
     history.to_csv(HISTORY_PATH, index=False)

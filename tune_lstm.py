@@ -215,7 +215,7 @@ def search(args):
         print(f"[stage {stage}] trial {i:>3} score {row['score']:.3f} (se {row['se']:.3f}) epochs {row['epochs']:>3} "
               f"tor F1 {row['f1_tor']:.3f} params {row['params']:>6} {row['minutes']:.1f} min | {cfgs[i]}", flush=True)
 
-    MODEL_DIR.mkdir(exist_ok=True)
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
     jobs = {i: (cfg, SEEDS[:1]) for i, cfg in enumerate(cfgs)}
     for i, c, minutes in run_jobs(jobs, args.workers, init_args):
         curves[i] = c

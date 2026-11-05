@@ -3,9 +3,9 @@
 This part of the project trains an LSTM to classify flows as **non_vpn**, **vpn** or **tor** from the bucketed flow features. The code is in `train_lstm.py` (train + shared helpers) and `tune_lstm.py` (hyper-parameter search). The results are read and plotted in the **LSTM** and **Model Comparison with LSTM** sections of `eda_cleaning.ipynb`; the notebook never trains the LSTM itself.
 
 ```
-data/final_data.npz --> train_lstm.py --> models/lstm.pt, lstm_history.csv, lstm_seed_runs.csv ---+
-                    \-> tune_lstm.py --> models/best_config.json, tuning_results.csv,              +--> eda_cleaning.ipynb
-                                         lstm_tuned.pt, tuned_test_scores.csv -------------------+
+data/final_data.npz --> train_lstm.py --> models/lstm/: lstm.pt, lstm_history.csv, lstm_seed_runs.csv ---+
+                    \-> tune_lstm.py --> models/lstm/: best_config.json, tuning_results.csv,           +--> eda_cleaning.ipynb
+                                         lstm_tuned.pt, tuned_test_scores.csv ----------------------+
 ```
 
 ## 1. Set up the environment
@@ -51,8 +51,8 @@ Each flow has 224 features: 8 channels × 28 log-spaced time buckets over the fi
 The model is a 2-layer LSTM (hidden size 32, dropout 0.2) with mean pooling over time and a linear head. It uses class-weighted cross-entropy and Adam (lr 1e-3), and keeps the epoch with the best validation macro-F1 (early stopping, patience 8).
 
 ```bash
-python train_lstm.py            # seed 4266 -> models/lstm.pt, models/lstm_history.csv
-python train_lstm.py --sweep    # also trains seeds 1-4 and scores val/test -> models/lstm_seed_runs.csv
+python train_lstm.py            # seed 4266 -> models/lstm/lstm.pt, models/lstm/lstm_history.csv
+python train_lstm.py --sweep    # also trains seeds 1-4 and scores val/test -> models/lstm/lstm_seed_runs.csv
 python train_lstm.py --seed 7   # train with a different seed
 ```
 
@@ -64,29 +64,29 @@ Run `--sweep` at least once, because the notebook's seed table and model compari
 
 ```bash
 python tune_lstm.py --smoke                  # tiny run, just to check the pipeline works
-python tune_lstm.py --trials 20              # search -> models/tuning_results.csv, models/best_config.json
+python tune_lstm.py --trials 20              # search -> models/lstm/tuning_results.csv, models/lstm/best_config.json
 python tune_lstm.py --final                  # train best_config.json on train+val, score test once
 ```
 
 Useful options: `--workers N` (run trials in parallel processes), `--fix use_aug=true bidirectional=true` (hold settings fixed), `--max-epochs`, `--folds`, `--top-k`, `--stage2-seeds`. Run `python tune_lstm.py --help` for all of them.
 
-`--final` writes `models/tuned_test_scores.csv` (5 seeds, test only) and `models/lstm_tuned.pt` (the first seed). Run it only after the search has produced `best_config.json`. The search can take a while on a CPU.
+`--final` writes `models/lstm/tuned_test_scores.csv` (5 seeds, test only) and `models/lstm/lstm_tuned.pt` (the first seed). Run it only after the search has produced `best_config.json`. The search can take a while on a CPU.
 
 ## 5. Run the model in the notebook
 
 1. Open `eda_cleaning.ipynb` in VS Code (or Jupyter) and select the **`.venv`** interpreter as the kernel (VS Code: *Select Kernel* → *Python Environments* → `.venv`). For classic Jupyter, register it with `python -m ipykernel install --user --name encrypted-traffic --display-name "Python (.venv)"`.
-2. Make sure the training outputs above exist in `models/`.
+2. Make sure the training outputs above exist in `models/lstm/`.
 3. **Restart the kernel**, then run only the LSTM cells, in order, starting from the `# LSTM (2 layers, hidden 32, mean-pool over time)` heading:
 
 | Section | What it does | Needs |
 |---|---|---|
-| LSTM | loads `models/lstm.pt`, plots the training loss / val macro-F1 curves, prints classification reports and confusion matrices for val and test | `train_lstm.py` |
+| LSTM | loads `models/lstm/lstm.pt`, plots the training loss / val macro-F1 curves, prints classification reports and confusion matrices for val and test | `train_lstm.py` |
 | Testing the LSTM run on different seeds | shows per-seed scores and mean / std | `train_lstm.py --sweep` |
 | Model Comparison with LSTM | compares LogReg, LSTM (5 seeds) and LSTM (tuned, 5 seeds). LogReg is the only model fitted in the notebook (deterministic, one run); both LSTM rows are read from CSVs | `--sweep` and `tune_lstm.py --final` |
 
 The LSTM section is self-contained, so you do not need to run the earlier EDA cells first. The opposite is not true: the LSTM cells import `X_train`, `y_train`, `X_test` and `y_test` from `train_lstm`, which overwrites the notebook's 2-D arrays and string labels with 3-D arrays and integer labels. If you want to re-run the earlier Random Forest / LogReg cells afterwards, restart the kernel first.
 
-## Output files (`models/`)
+## Output files (`models/lstm/`)
 
 | File | Written by | Contents |
 |---|---|---|

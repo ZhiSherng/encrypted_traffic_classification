@@ -19,7 +19,7 @@ raw .pcap files
 eda_cleaning.ipynb               clean, bucket into 8 x 28 features, split by stream,
    |                             augment Tor (train only), log1p + scale        -> data/final_data.npz, data/scaler.joblib
    +--> baselines (majority class, LogReg, Random Forest) inside the notebook
-   +--> train_lstm.py / tune_lstm.py   LSTM training and tuning                 -> models/*.pt, models/*.csv, best_config.json
+   +--> train_lstm.py / tune_lstm.py   LSTM training and tuning                 -> models/lstm/*.pt, models/lstm/*.csv, best_config.json
    +--> cnn_1d.py                      1D CNN training and evaluation           -> outputs/cnn_1d/<run>/
    v
 eda_cleaning.ipynb (LSTM sections) reads the saved LSTM results, plots them and compares models
@@ -45,7 +45,7 @@ Macro-F1 is the main metric, because accuracy is misleading (always guessing non
 | `README_lstm.md`, `README_cnn.md` | details for each model |
 | `requirements.txt` | pinned dependencies (Python 3.12) |
 | `data/` | parsed pickles, `final_data.npz`, `scaler.joblib` |
-| `models/` | saved weights and result CSVs |
+| `models/` | saved weights and result CSVs, one folder per model (`lstm/`, `cnn_1d/`) |
 
 # Setup
 
@@ -76,8 +76,8 @@ The repository should already contain `data/final_data.npz`, so you can go strai
 | Step | Command / file | Produces |
 |---|---|---|
 | 1. Rebuild the dataset (optional) | run `parsing.ipynb` (set your pcap paths), then the cleaning, split, augmentation, scaling and save cells of `eda_cleaning.ipynb`. The notebook saves `final_data.npz` and `scaler.joblib` straight into `data/` | `data/final_data.npz`, `data/scaler.joblib` |
-| 2. Train the LSTM | `python train_lstm.py --sweep` | `models/lstm.pt`, `lstm_history.csv`, `lstm_seed_runs.csv` |
-| 3. Tune the LSTM (optional) | `python tune_lstm.py --trials 20`, then `python tune_lstm.py --final` | `models/tuning_results.csv`, `best_config.json`, `lstm_tuned.pt`, `tuned_test_scores.csv` |
+| 2. Train the LSTM | `python train_lstm.py --sweep` | `models/lstm/lstm.pt`, `lstm_history.csv`, `lstm_seed_runs.csv` |
+| 3. Tune the LSTM (optional) | `python tune_lstm.py --trials 20`, then `python tune_lstm.py --final` | `models/lstm/tuning_results.csv`, `best_config.json`, `lstm_tuned.pt`, `tuned_test_scores.csv` |
 | 4. Train the 1D CNN | `python cnn_1d.py --no-class-weights --train-on-train-val --epochs 36 --seed 4266` (more options in `README_cnn.md`) | `outputs/cnn_1d/<run>/` |
 | 5. Generate the results | open `eda_cleaning.ipynb`, run the baseline, CNN and LSTM cells.
 
